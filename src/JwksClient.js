@@ -10,7 +10,8 @@ import {
 } from './utils';
 import {
   cacheSigningKey,
-  rateLimitSigningKey
+  rateLimitSigningKey,
+  multipleJwks
 } from './wrappers';
 
 export class JwksClient {
@@ -27,20 +28,23 @@ export class JwksClient {
     if (this.options.rateLimit) {
       this.getSigningKey = rateLimitSigningKey(this, options);
     }
+    if (this.options.multipleJwks) {
+      this.getKeys = multipleJwks(this, options);
+    }
     if (this.options.cache) {
       this.getSigningKey = cacheSigningKey(this, options);
     }
   }
 
-  getKeys(cb) {
-    this.logger(`Fetching keys from '${this.options.jwksUri}'`);
+  getKeys(cb, options = this.options) {
+    this.logger(`Fetching keys from '${options.jwksUri}'`);
     request({
       json: true,
-      uri: this.options.jwksUri,
-      strictSSL: this.options.strictSsl,
-      headers: this.options.requestHeaders,
-      agentOptions: this.options.requestAgentOptions,
-      proxy: this.options.proxy
+      uri: options.jwksUri,
+      strictSSL: options.strictSsl,
+      headers: options.requestHeaders,
+      agentOptions: options.requestAgentOptions,
+      proxy: options.proxy
     }, (err, res) => {
       if (err || res.statusCode < 200 || res.statusCode >= 300) {
         this.logger('Failure:', res && res.body || err);
